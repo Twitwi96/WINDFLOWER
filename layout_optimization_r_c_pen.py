@@ -59,12 +59,12 @@ eps_pen_r_c = 10 # Penalty multiplier for failed availablity test
 
 # Wind farm data
 wf_name = 'Northwind'
-init_layout = 'random_E' # 'base' or 'random'
+init_layout = 'random' # 'base' or 'random'
 min_spacing = 2 # Minimum number of rotor diameters between two turbines
 file_wt_pc = wf_name 
 path_data = 'Data\\'
 
-bootstrap = init_layout # True: replace timesteps in data after sampling, False: do not replace, '<name>': already sampled timesteps
+bootstrap = False # True: replace timesteps in data after sampling, False: do not replace, '<name>': already sampled timesteps
 
 # SGD parameters
 K = 20 # Day sampling
@@ -73,11 +73,10 @@ S = 10 # Forecasts
 sgd_iterations = 2000
 
 # Combinatorial exploration parameters (sub-optimization problem)
-alpha_step_min = 0.02
-beta_step = 1/110.7 # ~2MW
+p_step = 1 # ~2MW
 
 # Scenarios of wind and electricity prices
-scenarios_file = "data_scenarios_processed"
+scenarios_file = "data_scenarios"
 scenarios_years = ['2023'] # ['2021', '2022', '2023'] 
 nb_days = 365 # 365 + 365 + 365
 nb_samples_hourly = 4 # Each sample is a quarter hour
@@ -291,7 +290,7 @@ plot_boundary(constraint_boundary)
 
 if reserve == True:
     # Total contracted power (list of possible values)
-    p_tot_c_kt_list = np.arange(0, 1, beta_step) * p_farm_rated
+    p_tot_c_kt_list = np.arange(0, p_farm_rated, p_step)
     p_tot_c_kt_list = np.append(p_tot_c_kt_list, p_farm_rated)
 
     # Reserve (list of possible values)
@@ -301,8 +300,6 @@ if reserve == True:
     # Make combinations, and limit reserve to R_max
     for i_p in range(len(p_tot_c_kt_list)):
         alpha_step = 1/p_tot_c_kt_list[i_p]
-        # if alpha_step < alpha_step_min:
-            # alpha_step = alpha_step_min
         if p_tot_c_kt_list[i_p] <= r_max:
             alpha_temp = np.arange(0, 1, alpha_step)
             alpha_temp = np.append(alpha_temp, 1)
@@ -314,7 +311,7 @@ if reserve == True:
         p_tot_c_list = np.append(p_tot_c_list, np.repeat(p_tot_c_kt_list[i_p], len(alpha_temp)))
     
 else: # Only participation to day-ahead market
-    p_tot_c_kt_list = np.arange(0, p_farm_rated, 1)
+    p_tot_c_kt_list = np.arange(0, p_farm_rated, p_step)
     p_tot_c_kt_list = np.append(p_tot_c_kt_list, p_farm_rated)
     p_tot_c_list = p_tot_c_kt_list
     alpha_list = np.repeat(0, len(p_tot_c_list))
@@ -339,7 +336,7 @@ elif bootstrap == False: # Remove timestep from list after sampling
         # Remove sampled timesteps from data     
         day_timestep_list_index = day_timestep_list_index[~np.isin(day_timestep_list_index, sampled_kt_list_index)]
 else:
-    with open('Data/sampled_timesteps_K' + str(K) + '_' + init_layout, "rb") as fp:   
+    with open('Data/' + bootstrap, "rb") as fp:   
         sampled_timesteps = pickle.load(fp) 
 
 #%% Cost component model
@@ -572,6 +569,9 @@ profit_opt, layout_opt, recorder = tf_problem_sgd.optimize()
 end = time.time()
 exec_time = round(end - start, 2)
 
+#%% Save results
+
+# Save recorder
 recorder.save(output_name)
 # os.rename('Figures/', 'Figures_' + output_name + '/')
 os.mkdir('Output/' + output_name)
@@ -584,16 +584,6 @@ plt.show()
 
 print('Optimization with SGD (', str(sgd_iterations), 'iterations) took: {:.0f}s'.format(exec_time), ' with a total constraint violation of ', recorder['sgd_constraint'][-1])
 
-#%% Save results
-
-# Save recorder
-recorder.save(output_name)
-
-# Save computation time
-perf_log =  open("Output/Computation_time_" + wf_name + ".txt", "a")
-perf_log.write(datetime.now().strftime("%d/%m/%Y %H:%M:%S") + ": " + str(exec_time) + " sec"
-               + ' (' + output_name + ')\n')
-perf_log.close()
 winsound.Beep(500, 1000)
 
 

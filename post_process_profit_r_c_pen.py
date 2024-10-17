@@ -49,7 +49,7 @@ alpha_step_min = 0.02
 beta_step = 2/221.4 # ~2MW
 
 # Scenarios of wind and electricity prices
-scenarios_file = "data_scenarios_processed.xlsx"
+scenarios_file = "data_scenarios.xlsx"
 nb_samples_hourly = 4 # Each sample is a quarter hour
 wind_height = 100
 scenarios_years = ['2021', '2022', '2023', '2024']
@@ -558,15 +558,4 @@ pd.DataFrame.from_dict(total_mean_profit_fc).to_excel(writer, sheet_name = 'Tota
 pd.DataFrame.from_dict(results_qh).to_excel(writer, sheet_name = 'Results_qh', index=False)
 writer.close()
 
-
-#%% Test
-
-# kt_chunk = np.arange(0, 50, 1)
-# nb_cpu = 1
-# nb_chunk = 4
-
-# ws_fc_kt_S, wd_fc_kt_S = ws_fc_KT_S[kt_chunk, :], wd_fc_KT_S[kt_chunk, :]
-# price_da_fc_kt_S, price_imb_fc_kt_S = price_da_fc_KT_S[kt_chunk, :], price_imb_fc_KT_S[kt_chunk, :]
-# price_capa_up_fc_kt_S, price_acti_up_fc_kt_S = price_capa_up_fc_KT_S[kt_chunk, :], price_acti_up_fc_KT_S[kt_chunk, :]
-# volume_acti_up_pu_fc_kt_S = volume_acti_up_pu_fc_KT_S[kt_chunk, :]
 

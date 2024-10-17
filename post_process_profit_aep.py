@@ -42,7 +42,7 @@ file_wt_pc = wf_name + '_opt_' + type_opt_str
 data_path = 'Data\\'
 
 # Scenarios of wind and electricity prices
-scenarios_file = "data_scenarios_processed.xlsx"
+scenarios_file = "data_scenarios.xlsx"
 nb_samples_hourly = 4 # Each sample is a quarter hour
 wind_height = 100
 scenarios_years = ['2021', '2022', '2023', '2024']

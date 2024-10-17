@@ -53,12 +53,12 @@ from py_wake.utils.gradients import autograd as autograd_pw
 
 # Wind farm data
 wf_name = 'Northwind'
-init_layout = '50_random_B_K150' # 'base' or 'random'
+init_layout = 'random' # 'base' or 'random'
 min_spacing = 2 # Minimum number of rotor diameters between two turbines
 file_wt_pc = wf_name 
 path_data = 'Data\\'
 
-bootstrap = 'random_B' # init_layout # True: replace timesteps in data after sampling, False: do not replace, '<name>': already sampled timesteps
+bootstrap = False # init_layout # True: replace timesteps in data after sampling, False: do not replace, '<name>': already sampled timesteps
 
 # SGD parameters
 K = 150 # Day sampling
@@ -66,7 +66,7 @@ T = 1 # Timestep sampling
 sgd_iterations = 2000
 
 # Scenarios of wind and electricity prices
-scenarios_file = "Data/data_scenarios_processed"
+scenarios_file = "Data/data_scenarios"
 scenarios_years = ['2023'] # ['2021', '2022', '2023'] 
 nb_days = 365 # 365 + 365 + 365
 nb_samples_hourly = 4 # Each sample is a quarter hour
@@ -211,18 +211,6 @@ plt.ylabel('y [m]')
 plt.savefig('Plots/'+ output_name +'_init.pdf', dpi=600) 
 plt.show()
 
-# # Plot actual wf layout
-# plt.figure(dpi=1200)
-# plt.scatter(x_wf, y_wf, c='blue', marker='1')
-# plt.scatter(x_boundary, y_boundary, c='red', marker='.') # boundaries
-# plt.xlim(-500, 8000)
-# plt.ylim(-500, 8000)
-# ax = plt.gca()
-# ax.set_aspect('equal', adjustable='box')
-# plt.title(wf_name + ' layout')
-# plt.xlabel('x [m]')
-# plt.ylabel('y [m]')
-# plt.show()
 
 design_vars = {'x': x_init, 'y': y_init}
 
@@ -281,14 +269,9 @@ elif bootstrap == False: # Remove timestep from list after sampling
         sampled_timesteps.append(sampled_kt_list)
         # Remove sampled timesteps from data     
         day_timestep_list_index = day_timestep_list_index[~np.isin(day_timestep_list_index, sampled_kt_list_index)]
-    
-    # Save sampled timesteps
-    # init_layout = 'random_E'
-    # with open('Data/sampled_timesteps_K' + str(K) + '_' + init_layout, "wb") as variables:   
-    #     pickle.dump(sampled_timesteps, variables)
 
 else:
-    with open('Data/sampled_timesteps_K' + str(K) + '_' + bootstrap, "rb") as fp:   
+    with open('Data/' + bootstrap, "rb") as fp:   
         sampled_timesteps = pickle.load(fp) 
 
 def wind_sampling(it):
@@ -382,6 +365,9 @@ AEP_opt, layout_opt, recorder = tf_problem_sgd.optimize()
 end = time.time()
 exec_time = round(end - start, 2)
 
+#%% Save results
+
+# Save recorder
 recorder.save(output_name)
 # os.rename('Figures/', 'Figures_' + output_name + '/')
 os.mkdir('Output/' + output_name)
@@ -393,17 +379,6 @@ plt.savefig('Plots/'+ output_name +'_opt.pdf', dpi=600)
 plt.show()
 
 print('Optimization with SGD (', str(sgd_iterations), 'iterations) took: {:.0f}s'.format(exec_time), ' with a total constraint violation of ', recorder['sgd_constraint'][-1])
-
-#%% Save results
-
-# Save recorder
-# recorder.save(output_name)
-
-# Save computation time
-perf_log =  open("Output/Computation_time_" + wf_name + ".txt", "a")
-perf_log.write(datetime.now().strftime("%d/%m/%Y %H:%M:%S") + ": " + str(exec_time) + " sec"
-               + ' (' + output_name + ')\n')
-perf_log.close()
 
 winsound.Beep(500, 1000)
 
